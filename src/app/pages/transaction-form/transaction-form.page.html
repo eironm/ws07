@@ -1,0 +1,289 @@
+<ion-header>
+  <ion-toolbar class="ft-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home" text="" icon="close" aria-label="Cancel"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ title() }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ft-page">
+  <div class="type-seg">
+    <ion-segment [value]="type()" (ionChange)="setType($event.detail.value)">
+      <ion-segment-button value="expense">
+        <ion-label>Expense</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="income">
+        <ion-label>Income</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <!-- Amount -->
+  <div class="amount-box" [class.income]="type() === 'income'" [class.invalid]="submitted() && amountError()">
+    <label for="amount-input">Amount</label>
+    <div class="amount-row">
+      <span class="cur">{{ currencySymbol() }}</span>
+      <ion-input
+        id="amount-input"
+        class="amount-input"
+        type="number"
+        inputmode="decimal"
+        placeholder="0.00"
+        min="0"
+        [value]="amountText()"
+        [autofocus]="!isEdit()"
+        (ionInput)="amountText.set($event.detail.value ?? '')"
+        aria-label="Amount"
+      ></ion-input>
+    </div>
+    @if (submitted() && amountError()) {
+      <div class="err"><ion-icon name="alert-circle"></ion-icon> {{ amountError() }}</div>
+    }
+  </div>
+
+  <!-- Location: the headline feature -->
+  <div class="ft-card loc-card">
+    <div class="ft-card-title">
+      <span><ion-icon name="location"></ion-icon>Where you paid</span>
+      @if (locStatus() === 'ready') {
+        <span class="accuracy-badge {{ accuracyClass() }}">{{ accuracyText() }}</span>
+      }
+    </div>
+
+    @switch (locStatus()) {
+      @case ('ask') {
+        <!-- First stamp: explain before the system permission prompt appears. -->
+        <p class="ask-text">
+          Stamp this payment with where you paid? You'll see your spending by place on Home and the map. Stamps stay on
+          this phone; place names come from OpenStreetMap.
+        </p>
+        <div class="loc-actions">
+          <ion-button size="small" (click)="allowStamping()">
+            <ion-icon slot="start" name="locate"></ion-icon>
+            Stamp this payment
+          </ion-button>
+          <ion-button size="small" fill="clear" color="medium" (click)="declineStamping()">Not now</ion-button>
+        </div>
+      }
+      @case ('locating') {
+        <div class="locating">
+          <div class="radar"><ion-icon name="locate"></ion-icon></div>
+          <div>
+            <strong>Stamping your location…</strong>
+            <small>Getting a GPS fix — keep filling in the form.</small>
+          </div>
+        </div>
+        <div class="loc-actions">
+          <ion-button size="small" fill="outline" (click)="openPicker()">
+            <ion-icon slot="start" name="map"></ion-icon>
+            Pick on map instead
+          </ion-button>
+          <ion-button size="small" fill="clear" color="medium" (click)="removeLocation()">Skip</ion-button>
+        </div>
+      }
+
+      @case ('ready') {
+        @if (geo(); as g) {
+          <app-mini-map
+            [lat]="g.lat"
+            [lng]="g.lng"
+            [accuracy]="g.accuracy"
+            [height]="140"
+            (click)="openPicker()"
+            role="button"
+            aria-label="Adjust location on map"
+          ></app-mini-map>
+
+          <div class="place">
+            <div class="place-text">
+              @if (lookingUp() && !g.placeName) {
+                <strong class="ft-muted">Looking up address…</strong>
+              } @else {
+                <strong>{{ g.placeName || 'Unnamed place' }}</strong>
+              }
+              <small>
+                @if (g.address) {
+                  {{ g.address }}
+                } @else if (g.geocodeStatus === 'pending' && !lookingUp()) {
+                  <ion-icon name="cloud-offline-outline"></ion-icon> Offline — address will be added later
+                } @else {
+                  {{ coordsText() }}
+                }
+              </small>
+            </div>
+            <ion-button fill="clear" size="small" (click)="renamePlace()" aria-label="Rename this place">
+              <ion-icon slot="icon-only" name="pencil"></ion-icon>
+            </ion-button>
+          </div>
+
+          @if (refining()) {
+            <div class="refining"><ion-spinner name="dots"></ion-spinner> Improving accuracy…</div>
+          }
+          @if (visitsHere() > 0) {
+            <div class="hint-chip">
+              <ion-icon name="sparkles"></ion-icon>
+              <span>
+                You've paid here {{ visitsHere() }} time{{ visitsHere() === 1 ? '' : 's' }} before
+                @if (suggestedCategory() && type() === 'expense') {
+                  · usually <b>{{ categoryName(suggestedCategory()!) }}</b>
+                }
+              </span>
+            </div>
+          }
+          @if (location.permissionState() === 'approximate' && g.source !== 'manual') {
+            <div class="warn-chip">
+              <ion-icon name="warning"></ion-icon>
+              <span>Only approximate location is allowed. Turn on <b>Precise location</b> in app permissions for exact spots.</span>
+            </div>
+          }
+          @if (pastDateWarning()) {
+            <div class="warn-chip">
+              <ion-icon name="time"></ion-icon>
+              <span>This payment is dated earlier — is this where you actually paid? Tap the map to adjust.</span>
+            </div>
+          }
+
+          <div class="loc-actions">
+            <ion-button size="small" fill="outline" (click)="captureLocation()" [disabled]="refining()">
+              <ion-icon slot="start" name="refresh"></ion-icon>
+              Re-locate
+            </ion-button>
+            <ion-button size="small" fill="outline" (click)="openPicker()">
+              <ion-icon slot="start" name="map"></ion-icon>
+              Adjust
+            </ion-button>
+            <ion-button size="small" fill="clear" color="medium" (click)="removeLocation()">
+              <ion-icon slot="start" name="close"></ion-icon>
+              Remove
+            </ion-button>
+          </div>
+        }
+      }
+
+      @case ('error') {
+        <div class="loc-error">
+          <ion-icon name="warning"></ion-icon>
+          <p>{{ locError()?.message }}</p>
+        </div>
+        <div class="loc-actions">
+          <ion-button size="small" (click)="captureLocation()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Try again
+          </ion-button>
+          <ion-button size="small" fill="outline" (click)="openPicker()">
+            <ion-icon slot="start" name="map"></ion-icon>
+            Pick on map
+          </ion-button>
+          <ion-button size="small" fill="clear" color="medium" (click)="removeLocation()">Skip</ion-button>
+        </div>
+      }
+
+      @default {
+        <p class="ft-muted off-text">
+          No location attached.
+          @if (!settings.settings().autoLocation && !isEdit()) {
+            Auto-stamping is turned off in Settings.
+          }
+        </p>
+        <div class="loc-actions">
+          <ion-button size="small" (click)="captureLocation()">
+            <ion-icon slot="start" name="locate"></ion-icon>
+            Use current location
+          </ion-button>
+          <ion-button size="small" fill="outline" (click)="openPicker()">
+            <ion-icon slot="start" name="map"></ion-icon>
+            Pick on map
+          </ion-button>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Category -->
+  <div class="ft-card" [class.invalid-card]="submitted() && categoryError()">
+    <div class="ft-card-title">
+      <span><ion-icon name="pie-chart"></ion-icon>Category</span>
+      @if (submitted() && categoryError()) {
+        <span class="err small">{{ categoryError() }}</span>
+      }
+    </div>
+    <div class="cat-grid" role="radiogroup" aria-label="Category">
+      @for (c of categories(); track c.id) {
+        <button
+          type="button"
+          class="cat-btn"
+          role="radio"
+          [class.selected]="categoryId() === c.id"
+          [attr.aria-checked]="categoryId() === c.id"
+          [style.--c]="c.color"
+          (click)="pickCategory(c.id)"
+        >
+          <span class="ic"><ion-icon [name]="c.icon"></ion-icon></span>
+          <span class="nm">{{ c.name }}</span>
+          @if (suggestedCategory() === c.id && type() === 'expense') {
+            <span class="usual">usual here</span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="ft-card details">
+    <ion-input
+      fill="outline"
+      label="Note (optional)"
+      labelPlacement="floating"
+      placeholder="e.g. Lunch with friends"
+      [maxlength]="60"
+      [counter]="true"
+      [value]="note()"
+      (ionInput)="note.set($event.detail.value ?? '')"
+    ></ion-input>
+
+    <div class="field-label">Paid with</div>
+    <ion-segment class="method-seg" [value]="method()" (ionChange)="pickMethod($event.detail.value)">
+      @for (m of methods; track m.id) {
+        <ion-segment-button [value]="m.id" layout="icon-top">
+          <ion-icon [name]="m.icon"></ion-icon>
+          <ion-label>{{ m.label }}</ion-label>
+        </ion-segment-button>
+      }
+    </ion-segment>
+
+    <div class="field-label">Date &amp; time</div>
+    <ion-datetime-button datetime="tx-datetime"></ion-datetime-button>
+    <ion-modal [keepContentsMounted]="true">
+      <ng-template>
+        <ion-datetime
+          id="tx-datetime"
+          presentation="date-time"
+          [max]="maxDate"
+          [value]="dateIso()"
+          [showDefaultButtons]="true"
+          (ionChange)="onDate($event.detail.value)"
+        ></ion-datetime>
+      </ng-template>
+    </ion-modal>
+  </div>
+
+  <div style="height: 16px"></div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar class="ft-toolbar footer">
+    <ion-button expand="block" size="large" (click)="save()" [disabled]="saving()">
+      @if (saving()) {
+        <ion-spinner name="crescent"></ion-spinner>
+      } @else {
+        <ion-icon slot="start" name="checkmark"></ion-icon>
+        {{ isEdit() ? 'Save changes' : type() === 'expense' ? 'Save expense' : 'Save income' }}
+        @if (valid()) {
+          · {{ amount() | money }}
+        }
+      }
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>
+

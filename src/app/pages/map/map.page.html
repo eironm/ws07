@@ -1,0 +1,105 @@
+<ion-header>
+  <ion-toolbar class="ft-toolbar">
+    <ion-title>Spending map</ion-title>
+  </ion-toolbar>
+  <ion-toolbar class="ft-toolbar">
+    <ion-segment [value]="mode()" (ionChange)="setMode($event.detail.value)">
+      <ion-segment-button value="pins">
+        <ion-label>Payments</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="places">
+        <ion-label>Hotspots</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="trail">
+        <ion-label>Day trail</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [scrollY]="false">
+  <div class="map-shell">
+    <div #mapEl class="map"></div>
+
+    @if (mode() !== 'trail') {
+      <div class="ft-chip-row periods">
+        @for (p of periods; track p.id) {
+          <ion-chip [class.active]="period() === p.id" (click)="setPeriod(p.id)">
+            <ion-label>{{ p.label }}</ion-label>
+          </ion-chip>
+        }
+      </div>
+    }
+
+    <div class="side-buttons">
+      <button class="round" (click)="locateMe()" aria-label="Show my location">
+        @if (locating()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          <ion-icon name="locate"></ion-icon>
+        }
+      </button>
+      <button class="round" (click)="fitAll()" aria-label="Fit all payments">
+        <ion-icon name="expand"></ion-icon>
+      </button>
+    </div>
+
+    @if (isEmpty()) {
+      <div class="empty-overlay">
+        <ion-icon name="map"></ion-icon>
+        <strong>No geotagged payments {{ mode() === 'trail' ? 'yet' : 'in this period' }}</strong>
+        <span>Payments you log with a location show up here.</span>
+        <div class="row">
+          @if (mode() !== 'trail' && period() !== 'all') {
+            <ion-button size="small" fill="outline" (click)="setPeriod('all')">Show all time</ion-button>
+          }
+          <ion-button size="small" (click)="addExpense()">
+            <ion-icon name="add" slot="start"></ion-icon>
+            Add expense
+          </ion-button>
+        </div>
+      </div>
+    } @else {
+      <div class="summary-card">
+        @if (mode() === 'trail') {
+          <div class="trail-head">
+            <button class="nav" (click)="shiftDay(-1)" [disabled]="!canPrevDay()" aria-label="Previous day">
+              <ion-icon name="chevron-back"></ion-icon>
+            </button>
+            <div class="trail-title">
+              <strong>{{ trailStats().label }}</strong>
+              <span>{{ trailStats().first }} – {{ trailStats().last }}</span>
+            </div>
+            <button class="nav" (click)="shiftDay(1)" [disabled]="!canNextDay()" aria-label="Next day">
+              <ion-icon name="chevron-forward"></ion-icon>
+            </button>
+          </div>
+          <div class="stats">
+            <div><ion-icon name="pin"></ion-icon><b>{{ trailStats().stops }}</b><span>stops</span></div>
+            <div><ion-icon name="wallet"></ion-icon><b>{{ trailStats().spent | money: true }}</b><span>spent</span></div>
+            <div><ion-icon name="footsteps"></ion-icon><b>{{ trailStats().distance }}</b><span>between stops</span></div>
+          </div>
+        } @else {
+          <div class="in-view">
+            <div>
+              <span class="lbl">Spent in this area</span>
+              <strong>{{ inView().spent | money }}</strong>
+            </div>
+            <div class="count">
+              <b>{{ inView().count }}</b>
+              <span>payment{{ inView().count === 1 ? '' : 's' }}</span>
+            </div>
+          </div>
+          <p class="tip">
+            @if (mode() === 'places') {
+              Bigger bubble = more money spent there. Tap one for details.
+            } @else {
+              Pan and zoom — the total updates for what's on screen.
+            }
+          </p>
+        }
+      </div>
+    }
+  </div>
+</ion-content>
+

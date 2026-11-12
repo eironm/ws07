@@ -1,0 +1,260 @@
+<ion-header>
+  <ion-toolbar class="ft-toolbar">
+    <ion-title>
+      <h1 class="brand">Finance<span class="semi">;</span> Tracker</h1>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ft-page home" [scrollEvents]="true" (ionScroll)="onScroll($event)">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (sampleCount() > 0) {
+    <div class="sample-note" role="note">
+      <ion-icon name="flask" aria-hidden="true"></ion-icon>
+      <span>You're looking at sample data.</span>
+      <button type="button" class="link" (click)="clearSample()">Clear it</button>
+    </div>
+  }
+
+  @if (!tx.loaded()) {
+    <div class="ft-empty" role="status"><ion-spinner aria-label="Loading your passbook"></ion-spinner></div>
+  } @else if (!allowance()) {
+    <!-- First run: the allowance is the one thing the passbook needs before it can count down. -->
+    <section class="ft-card setup" aria-labelledby="setup-title">
+      <h2 id="setup-title">How much is your allowance?</h2>
+      <p class="setup-lede">Finance; Tracker counts down from it until the next one arrives.</p>
+
+      <ion-input
+        class="setup-field"
+        label="Amount you get each time"
+        labelPlacement="stacked"
+        fill="outline"
+        type="number"
+        inputmode="decimal"
+        placeholder="1500"
+        [value]="setupAmount()"
+        (ionInput)="setupAmount.set($event.detail.value ?? '')"
+      ></ion-input>
+
+      <p class="setup-q" id="cadence-label">How often does it come?</p>
+      <ion-segment [value]="setupCadence()" (ionChange)="setCadence($event.detail.value)" aria-labelledby="cadence-label">
+        <ion-segment-button value="weekly"><ion-label>Every week</ion-label></ion-segment-button>
+        <ion-segment-button value="monthly"><ion-label>Every month</ion-label></ion-segment-button>
+      </ion-segment>
+
+      @if (setupCadence() === 'weekly') {
+        <p class="setup-q" id="weekday-label">On which day?</p>
+        <div class="weekday-row" role="radiogroup" aria-labelledby="weekday-label">
+          @for (d of weekdays; track d.day) {
+            <button
+              type="button"
+              role="radio"
+              class="weekday"
+              [class.on]="setupWeekday() === d.day"
+              [attr.aria-checked]="setupWeekday() === d.day"
+              [attr.aria-label]="d.name"
+              (click)="setupWeekday.set(d.day)"
+            >
+              {{ d.short }}
+            </button>
+          }
+        </div>
+      } @else {
+        <ion-select
+          class="setup-field"
+          label="On which day of the month?"
+          labelPlacement="stacked"
+          fill="outline"
+          interface="popover"
+          [value]="setupMonthDay()"
+          (ionChange)="setupMonthDay.set($event.detail.value)"
+        >
+          @for (n of monthDays; track n) {
+            <ion-select-option [value]="n">{{ n }}</ion-select-option>
+          }
+        </ion-select>
+      }
+
+      <ion-input
+        class="setup-field"
+        label="How much of it is left right now?"
+        labelPlacement="stacked"
+        fill="outline"
+        type="number"
+        inputmode="decimal"
+        [placeholder]="setupAmount() || '0'"
+        helperText="Leave it empty if you haven't spent any of it yet."
+        [value]="setupLeft()"
+        (ionInput)="setupLeft.set($event.detail.value ?? '')"
+      ></ion-input>
+
+      <ion-button expand="block" (click)="saveAllowance()" [disabled]="!setupValid()">Start my passbook</ion-button>
+      <ion-button expand="block" fill="clear" (click)="loadDemo()" [disabled]="loadingSample()">
+        @if (loadingSample()) {
+          <ion-spinner name="crescent" aria-label="Loading sample data"></ion-spinner>
+        } @else {
+          <ion-icon name="flask" slot="start" aria-hidden="true"></ion-icon>
+          Try with sample data
+        }
+      </ion-button>
+    </section>
+
+    @if (recent().length) {
+      <section class="ft-card recent" aria-labelledby="recent-title">
+        <div class="card-head">
+          <h2 id="recent-title">Your payments so far</h2>
+        </div>
+        @for (t of recent(); track t.id) {
+          <app-tx-item [tx]="t" [showDay]="true"></app-tx-item>
+        }
+      </section>
+    }
+  } @else if (ledger(); as l) {
+    <!-- The balance: what's left until the next allowance, and what that leaves per day. -->
+    <section class="balance" [class]="l.state" aria-labelledby="balance-label">
+      <h2 id="balance-label" class="balance-label">{{ balanceLabel() }}</h2>
+      <p class="balance-amount">
+        @if (l.left >= 0) {
+          {{ l.left | money: 'ledger' }}
+        } @else {
+          {{ -l.left | money: 'ledger' }} <span class="over-word">over</span>
+        }
+      </p>
+      <p class="balance-pace">
+        {{ l.period.daysLeft }} {{ plural(l.period.daysLeft, 'day', 'days') }} to go, today included
+        @if (l.left > 0) {
+          · about <b>{{ l.perDay | money: true }} a day</b>
+        }
+      </p>
+      <div class="balance-foot">
+        <p class="pace-state">
+          @switch (l.state) {
+            @case ('over') {
+              <ion-icon name="warning" aria-hidden="true"></ion-icon><b>Over the allowance</b>
+            }
+            @case ('fast') {
+              <ion-icon name="alert-circle" aria-hidden="true"></ion-icon><b>Ahead of pace</b>
+            }
+            @default {
+              <ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon><b>On pace</b>
+            }
+          }
+          <span>{{ paceDetail() }}</span>
+        </p>
+        <button type="button" class="ring" (click)="addMoney()">
+          <ion-icon name="add" aria-hidden="true"></ion-icon>
+          Add money
+        </button>
+      </div>
+    </section>
+
+    @if (tx.pendingGeocodeCount() > 0 && settings.settings().addressLookup) {
+      <div class="pending">
+        <ion-icon name="cloud-offline-outline" aria-hidden="true"></ion-icon>
+        <span>
+          {{ tx.pendingGeocodeCount() }} {{ plural(tx.pendingGeocodeCount(), 'place is', 'places are') }} waiting for a
+          connection to get a name.
+        </span>
+        <button type="button" class="link" (click)="retryPending()">Try now</button>
+      </div>
+    }
+
+    <!-- The passbook: fixed columns, the balance after every line. -->
+    <section class="book" [style]="columnVars()" aria-labelledby="book-title">
+      <h2 id="book-title" class="visually-hidden">Passbook since {{ startDate() }}</h2>
+      <div class="cols" aria-hidden="true">
+        <span></span><span>Payment</span><span class="num">Amount</span><span class="num">Left</span>
+      </div>
+
+      <div class="line ghost">
+        <span class="pin" aria-hidden="true"><ion-icon name="calendar"></ion-icon></span>
+        <span class="what">
+          <span class="title">Next allowance</span>
+          <span class="where">{{ nextDate() }}</span>
+        </span>
+        <span class="amt num">+{{ allowance()!.amount | money: 'ledger' }}</span>
+        <span class="left num"></span>
+      </div>
+
+      @for (day of days(); track day.key) {
+        <h3 class="day">
+          <span>{{ day.label }}</span>
+          @if (day.spent > 0) {
+            <span class="num day-total"><span class="visually-hidden">Spent </span>−{{ day.spent | money: 'ledger' }}</span>
+          }
+        </h3>
+        <ul class="lines">
+          @for (line of day.lines; track line.id) {
+            <li>
+              <button
+                type="button"
+                class="line"
+                [class.in]="line.income"
+                [class.fast]="line.state === 'fast'"
+                [class.over]="line.state === 'over'"
+                [class.fresh]="justLogged() === line.id"
+                [attr.aria-label]="line.aria"
+                (click)="open(line.tx)"
+              >
+                <span class="pin" [class.none]="line.pin === null" aria-hidden="true">
+                  @if (line.income) {
+                    <ion-icon name="add"></ion-icon>
+                  } @else if (line.pin !== null) {
+                    {{ line.pin }}
+                  }
+                </span>
+                <span class="what">
+                  <span class="title">{{ line.title }}</span>
+                  <span class="where">{{ line.where }}</span>
+                </span>
+                <span class="amt num">
+                  {{ line.income ? '+' : '−' }}{{ line.tx.amount | money: 'ledger' }}
+                  <small class="when">{{ line.time }}</small>
+                </span>
+                <span class="left num"><i class="mark" aria-hidden="true"></i>{{ line.balanceAfter | money: 'ledger' }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      } @empty {
+        <p class="empty-line">No payments since {{ startDate() }}. Log one right after you pay for something.</p>
+      }
+
+      <div class="line divider">
+        <span class="pin" aria-hidden="true"><ion-icon name="wallet"></ion-icon></span>
+        <span class="what">
+          <span class="title">{{ l.openedMidPeriod ? 'Left when you started' : 'Allowance' }}</span>
+          <span class="where">{{ startDate() }}</span>
+        </span>
+        <span class="amt num">+{{ l.opening | money: 'ledger' }}</span>
+        <span class="left num">{{ l.opening | money: 'ledger' }}</span>
+      </div>
+
+      @if (previousText(); as prev) {
+        <p class="prev">
+          {{ prev }}
+          <button type="button" class="link" (click)="go('/tabs/history')">See it in History</button>
+        </p>
+      }
+    </section>
+  }
+
+  @if (allowance()) {
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <button
+        type="button"
+        class="log-fab"
+        [class.compact]="fabState() !== 'extended'"
+        [class.away]="fabState() === 'hidden'"
+        [attr.tabindex]="fabState() === 'hidden' ? -1 : null"
+        (click)="logPayment()"
+      >
+        <ion-icon name="add" aria-hidden="true"></ion-icon>
+        <span class="log-fab-label">Log payment</span>
+      </button>
+    </ion-fab>
+  }
+</ion-content>

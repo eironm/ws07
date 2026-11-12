@@ -1,0 +1,659 @@
+// Home: the allowance passbook. A balance block, then one ledger card whose lines keep
+// fixed columns (pin · payment · amount · left). Spacing follows a 4px scale.
+
+ion-content.home {
+  // Room for the log button and the gesture bar, instead of a spacer element.
+  --padding-bottom: calc(96px + var(--ion-safe-area-bottom, 0px));
+}
+
+// Every ion-button on Home gets a full-size touch target.
+ion-button {
+  height: 44px;
+}
+
+.brand {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.semi {
+  color: var(--ion-color-primary);
+}
+
+// Text buttons: small visible label, 44px tall hit area.
+button.link {
+  appearance: none;
+  min-height: 44px;
+  margin: 0 -8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ion-color-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+// ---------------------------------------------------------------- notes
+
+.sample-note,
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 16px 12px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+
+  ion-icon {
+    flex: none;
+    font-size: 16px;
+  }
+  span {
+    flex: 1;
+    padding: 8px 0;
+  }
+  button.link {
+    margin: 0 -4px 0 0;
+    color: var(--ft-link-on-tint);
+  }
+}
+.sample-note {
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+
+  ion-icon {
+    color: var(--ion-color-primary);
+  }
+}
+.pending {
+  font-size: 13px;
+  background: rgba(var(--ion-color-warning-rgb), 0.14);
+}
+
+// ---------------------------------------------------------------- setup
+
+.setup {
+  padding: 24px 20px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  .setup-lede {
+    margin: 0 0 8px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ft-muted);
+  }
+  .setup-field {
+    margin-top: 16px;
+  }
+  .setup-q {
+    margin: 20px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  ion-button {
+    margin-top: 16px;
+  }
+  ion-button + ion-button {
+    margin-top: 4px;
+  }
+}
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.weekday {
+  appearance: none;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--ft-border);
+  border-radius: 12px;
+  background: var(--ft-card);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.on {
+    border-color: var(--ion-color-primary);
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.recent {
+  padding-inline: 4px;
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: -10px 0 4px;
+    padding-inline: 12px;
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- balance
+
+.balance {
+  --ft-state: var(--ft-summary-ok);
+  container-type: inline-size;
+  margin: 4px 16px 14px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--ft-summary-bg);
+  color: var(--ft-summary-ink);
+
+  &.fast {
+    --ft-state: var(--ft-summary-warn);
+  }
+  &.over {
+    --ft-state: var(--ft-summary-over);
+
+    .balance-amount {
+      color: var(--ft-summary-over);
+    }
+  }
+
+  .balance-label {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ft-summary-ink-2);
+  }
+  .balance-amount {
+    margin: 2px 0 4px;
+    font-size: clamp(30px, 13cqi, 46px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .over-word {
+    font-size: 0.5em;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  .balance-pace {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ft-summary-ink-2);
+
+    b {
+      color: var(--ft-summary-ink);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .balance-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ft-summary-rule);
+  }
+  .pace-state {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 8px;
+    align-items: center;
+    margin: 0;
+    font-size: 14px;
+
+    ion-icon {
+      grid-row: span 2;
+      font-size: 20px;
+      color: var(--ft-state);
+    }
+    span {
+      font-size: 13px;
+      color: var(--ft-summary-ink-2);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // Ring button on the indigo surface: visible label, 44px tall target.
+  .ring {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--ft-summary-ring);
+    border-radius: 999px;
+    background: none;
+    color: var(--ft-summary-ink);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    ion-icon {
+      margin-left: -4px;
+      font-size: 18px;
+    }
+    &:active {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--ft-summary-ink);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- passbook
+
+.book {
+  // Column widths come from the longest amount and balance in this passbook.
+  --cols: 28px minmax(0, 1fr) calc(var(--amt-ch, 7) * 1ch + 4px) calc(var(--left-ch, 7) * 1ch + 4px);
+  container-type: inline-size;
+  margin: 0 16px 16px;
+  overflow: hidden;
+  border: 1px solid var(--ft-border);
+  border-radius: 20px;
+  background: var(--ft-card);
+  box-shadow: var(--ft-shadow);
+}
+
+.cols,
+.line,
+.day {
+  display: grid;
+  grid-template-columns: var(--cols);
+  column-gap: 10px;
+  align-items: center;
+  padding-inline: 12px;
+}
+
+.cols {
+  padding-block: 10px 8px;
+  border-bottom: 1px solid var(--ft-border);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ft-muted);
+}
+
+.day {
+  margin: 0;
+  padding-block: 14px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ft-muted);
+
+  > span:first-child {
+    grid-column: 1 / 3;
+  }
+  .day-total {
+    grid-column: 3;
+    font-weight: 500;
+  }
+}
+
+.lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li + li .line {
+    border-top: 1px solid var(--ft-border);
+  }
+}
+
+.line {
+  width: 100%;
+  min-height: 56px;
+  padding-block: 8px;
+  text-align: start;
+  color: inherit;
+  font: inherit;
+}
+button.line {
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  &:active {
+    background: rgba(var(--ion-color-primary-rgb), 0.06);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+// Matches the numbered pins on the Places map.
+.pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  &.none {
+    background: none;
+    border: 1.5px dashed var(--ft-muted);
+  }
+  ion-icon {
+    font-size: 16px;
+  }
+}
+
+.what {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .title,
+  .where {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .title {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .where {
+    font-size: 13px;
+    color: var(--ft-muted);
+  }
+}
+
+.amt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 14px;
+
+  .when {
+    font-size: 12px;
+    color: var(--ft-muted);
+  }
+}
+.left {
+  font-size: 15px;
+  font-weight: 700;
+
+  .mark {
+    display: none;
+    width: 6px;
+    height: 6px;
+    margin: 0 4px 2px 0;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+  }
+}
+
+.line.in {
+  .pin {
+    background: rgba(var(--ion-color-success-rgb), 0.16);
+    color: var(--ft-money-in);
+  }
+  .amt {
+    color: var(--ft-money-in);
+    font-weight: 600;
+  }
+}
+// The line's own pace state restyles its balance, never its position.
+.line.fast .left {
+  color: var(--ft-warn-ink);
+
+  .mark {
+    display: inline-block;
+  }
+}
+.line.over .left {
+  color: var(--ft-over-ink);
+
+  .mark {
+    display: inline-block;
+  }
+}
+
+// The two non-payment lines may wrap: they carry the period's meaning, not a row of data.
+.line.ghost,
+.line.divider {
+  .title {
+    white-space: normal;
+  }
+}
+
+// The next allowance, written ahead like a future passbook entry: a dashed rule, not a box.
+.line.ghost {
+  border-bottom: 1.5px dashed rgba(var(--ion-color-primary-rgb), 0.4);
+  color: var(--ft-link-on-tint);
+
+  .pin {
+    background: rgba(var(--ion-color-primary-rgb), 0.12);
+    color: var(--ft-link-on-tint);
+  }
+  .where {
+    color: inherit;
+  }
+  .amt {
+    font-weight: 600;
+  }
+}
+
+// Where the allowance landed: the period's first entry.
+.line.divider {
+  margin-top: 8px;
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+
+  .pin {
+    background: rgba(var(--ion-color-primary-rgb), 0.16);
+    color: var(--ft-link-on-tint);
+  }
+  .title {
+    font-weight: 700;
+    color: var(--ft-link-on-tint);
+  }
+  .amt {
+    color: var(--ft-money-in);
+    font-weight: 600;
+  }
+}
+
+.empty-line,
+.prev {
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ft-muted);
+}
+.prev {
+  border-top: 1px solid var(--ft-border);
+
+  button.link {
+    margin: 0;
+  }
+}
+
+// Too narrow for four columns (large text, zoom, small phones): the balance keeps its
+// column on the right and the amount and time move under the payment.
+@container (max-width: 300px) {
+  .cols,
+  .line .pin {
+    display: none;
+  }
+  .line,
+  .day {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .line {
+    .what {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .left {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .amt {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+  }
+  .day > span:first-child {
+    grid-column: 1;
+  }
+  .day .day-total {
+    grid-column: 2;
+  }
+}
+
+// The one authored moment: a logged payment slides in at the top of today.
+.line.fresh {
+  animation: line-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes line-in {
+  from {
+    transform: translateY(-12px);
+    background: rgba(var(--ion-color-primary-rgb), 0.18);
+  }
+  60% {
+    background: rgba(var(--ion-color-primary-rgb), 0.12);
+  }
+  to {
+    transform: none;
+    background: transparent;
+  }
+}
+
+// ---------------------------------------------------------------- log button
+
+// Extended at the top ("+ Log payment"), slides away while scrolling down so it never
+// sits on the amounts being read, and returns as a circle when the scroll turns upward.
+.log-fab {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  max-width: 220px;
+  padding: 0 20px 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.22),
+    0 1px 3px rgba(15, 23, 42, 0.18);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease-out;
+
+  ion-icon {
+    flex: none;
+    font-size: 24px;
+  }
+  .log-fab-label {
+    margin-left: 8px;
+    transition: opacity 0.2s ease-out;
+  }
+
+  &.compact {
+    max-width: 56px;
+    padding: 0 16px;
+
+    .log-fab-label {
+      opacity: 0;
+    }
+  }
+  &.away {
+    transform: translateY(calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  &:active {
+    background: var(--ion-color-primary-shade);
+  }
+  &:focus-visible {
+    outline: 3px solid var(--ion-color-primary);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line.fresh {
+    animation: none;
+    background: rgba(var(--ion-color-primary-rgb), 0.1);
+  }
+  .log-fab,
+  .log-fab .log-fab-label {
+    transition: none;
+  }
+}
+
+// On wide screens (tablets, the web) the passbook keeps a readable column instead of
+// stretching its amounts away from their payments.
+.sample-note,
+.pending,
+.setup,
+.recent,
+.balance,
+.book {
+  margin-inline: max(16px, calc((100% - 640px) / 2));
+}

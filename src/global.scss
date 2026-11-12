@@ -1,0 +1,382 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+/* ------------------------------------------------------------------ */
+/* Finance; Tracker global styles                                      */
+/* ------------------------------------------------------------------ */
+
+ion-content.ft-page {
+  --background: var(--ft-page);
+}
+
+/* Text for screen readers only. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Buttons read in sentence case, like every other label in the app (md mode defaults to uppercase). */
+ion-button,
+ion-segment-button {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.alert-wrapper .alert-button-group .alert-button {
+  text-transform: none;
+}
+ion-toast::part(button) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+ion-toolbar.ft-toolbar {
+  --background: var(--ft-page);
+  --border-width: 0 !important;
+}
+
+.ft-card {
+  background: var(--ft-card);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 16px 14px;
+  box-shadow: var(--ft-shadow);
+  border: 1px solid var(--ft-border);
+}
+
+.ft-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--ion-color-primary);
+    vertical-align: -3px;
+    margin-right: 6px;
+  }
+
+  a,
+  button.link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+    background: none;
+    border: none;
+    text-decoration: none;
+    padding: 4px;
+  }
+}
+
+.ft-section-label {
+  margin: 18px 20px 8px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ft-muted);
+}
+
+.ft-muted {
+  color: var(--ft-muted);
+}
+
+.cat-bubble {
+  --c: #64748b;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-right: 12px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.ft-empty {
+  text-align: center;
+  padding: 48px 28px;
+  color: var(--ft-muted);
+
+  ion-icon.big {
+    font-size: 64px;
+    color: var(--ion-color-primary);
+    opacity: 0.85;
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    color: var(--ion-text-color);
+    font-weight: 700;
+    font-size: 20px;
+    margin: 6px 0;
+  }
+
+  p {
+    margin: 0 0 18px;
+    line-height: 1.45;
+  }
+}
+
+.ft-chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 6px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  ion-chip {
+    flex: none;
+    margin: 0;
+  }
+}
+
+.accuracy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+
+  &.good {
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.15);
+  }
+  &.ok {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.18);
+  }
+  &.poor {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.15);
+  }
+  &.manual {
+    color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.14);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .accuracy-badge.good {
+    color: #4ade80;
+  }
+  .accuracy-badge.ok {
+    color: #fbbf24;
+  }
+  .accuracy-badge.poor {
+    color: #f87171;
+  }
+}
+
+/* ---------------- Leaflet / map pins ---------------- */
+
+.leaflet-container {
+  font-family: var(--ion-font-family);
+  background: var(--ft-page);
+}
+
+/* Numbered pins that match a numbered list (Home's places strip): brand color, readable ink in both themes. */
+.ft-step.ft-step--brand {
+  --pin: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  border-color: var(--ft-card);
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* OpenStreetMap has no dark style: invert its light tiles and turn the hues back. */
+.ft-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.6);
+}
+
+.ft-pin-wrap {
+  background: none !important;
+  border: none !important;
+}
+
+.ft-pin {
+  --pin: #5b5fef;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 7px));
+  background: var(--pin);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  border: 2px solid #fff;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #fff;
+  }
+
+  &.ft-pin--hl {
+    transform: translate(-50%, calc(-100% - 7px)) scale(1.15);
+    z-index: 1000;
+  }
+}
+
+.ft-step {
+  --pin: #5b5fef;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pin);
+  color: #fff;
+  border: 2px solid #fff;
+  font-weight: 800;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.ft-dot {
+  --pin: #5b5fef;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pin);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.ft-me {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 rgba(37, 99, 235, 0.6);
+  animation: ft-pulse 2s infinite;
+}
+
+@keyframes ft-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  background: var(--ft-card);
+  color: var(--ion-text-color);
+}
+.leaflet-popup-tip {
+  background: var(--ft-card);
+}
+
+.ft-popup {
+  min-width: 170px;
+
+  .amt {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .meta {
+    color: var(--ft-muted);
+    font-size: 12px;
+    margin: 2px 0 8px;
+  }
+  button {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 8px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--ion-color-primary);
+  }
+}
+
+.leaflet-tooltip.ft-place-label {
+  background: var(--ft-card);
+  color: var(--ion-text-color);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  padding: 4px 8px;
+
+  &::before {
+    display: none;
+  }
+}
